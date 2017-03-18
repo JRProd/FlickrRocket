@@ -15,14 +15,22 @@ import android.widget.ImageView;
 
 public class ImageViewer extends AppCompatActivity {
 
+    //PhotoBuffer for continueous browsing.
     private PhotoBuffer photos;
 
+    //Variables for swipe gesture
     private float x1,x2;
     private static final int MIN_DISTANCE = 150;
 
+    /** updateImage - Updates image used in the image viewer to the current image in the buffer
+     *
+     */
     private void updateImage() {
+        //Get the imageView
         ImageView imageView = (ImageView) findViewById(R.id.imageView);
+        //Get current bitmap from buffer
         Bitmap bmp = photos.getCurrentImage();
+        //Set image to bitmap
         imageView.setImageBitmap(bmp);
     }
 
@@ -42,25 +50,40 @@ public class ImageViewer extends AppCompatActivity {
             }
         });
 
+        //Create new PhotoBuffer and populate buffer with 30 images
         photos = new PhotoBuffer();
         photos.populateBuffer(30);
 
+        //Update image to new image in buffer
         updateImage();
     }
 
+    /** onTouchEvent - Controller for the swipe gestures
+     *
+     * @param event: MotionEvent - Android build-in method for gesture control
+     * @return boolean
+     */
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        //Switch on Event action
         switch(event.getAction()) {
+            //On Finger down
             case MotionEvent.ACTION_DOWN:
+                //Get first x value
                 x1 = event.getX();
                 break;
+            //On Finger up
             case MotionEvent.ACTION_UP:
+                //Get second x value
                 x2 = event.getX();
+                //Find the deltaX
                 float deltaX = x2 - x1;
+                //Swipe left to right
                 if (deltaX > MIN_DISTANCE) {
                     photos.lastImage();
                     updateImage();
                 }
+                //Swipe right to left
                 else if(deltaX < -1 * MIN_DISTANCE) {
                     photos.nextImage();
                     updateImage();

@@ -11,28 +11,40 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-/**
+/** PhotoBuffer - Underlying logic and data structure for my image viewing app. Based on a LinkedList
+ *      to allow bidirectonal scrolling and on the fly resizing.
+ *
+ *  With implementations of both forward and reverse scrolling, I have allowed a history for users.
+ *      PhotoBuffer also controls the initial amount of images loaded along with, when and how many
+ *      new images are buffered when the scrolling
+ *
  * Created by Jake Rowland on 3/17/2017.
  */
-
 public class PhotoBuffer {
 
+    //Buffer Update and number added when buffering
     private int bufferUpdate = 4, bufferOverflow = 10;
 
+    //Buffer Handler and LinkedList data structure
     private ImageBufferHandler loader;
     private LinkedList<Bitmap> buffer;
 
+    //Image stats
     private int loadedImage;
     private int currentImage;
 
+    /** PhotoBuffer - Initilizes and implements the PhotoBuffer
+     *
+     */
     PhotoBuffer() {
-        //Create both a forward and backward buffer.
+        //Init global variables
         buffer = new LinkedList<Bitmap>();
         loadedImage = 0;
         currentImage = 0;
 
         URL api = null;
         try {
+            //Create the URL for the API
             api = new URL("https://api.flickr.com/services/rest/?format=json&sort=random&method=" +
                     "flickr.photos.search&tags=rocket&tag_mode=all&api_key=" +
                     "0e2b6aaf8a6901c264acb91f151a3350&nojsoncallback=1");

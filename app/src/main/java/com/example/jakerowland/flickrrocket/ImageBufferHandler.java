@@ -24,73 +24,110 @@ import javax.net.ssl.HttpsURLConnection;
 /** ImageBufferHandler - The purpose of this class is to handle the buffering of images when the
  *      application opens and to continually buffer as the user scrolls
  *
- *  With the underlying
+ *  With the underlying AysncTask to allow loading of images while the user is interacting with
+ *      this application. I achieve this moving buffer by requesting images from the ImageDownloader
+ *      on an as needed basis. My solution revolves around stroing the JSONArray contaning the
+ *      picture details globaly in this class. After the AsyncTask has finsihed. I can access
+ *      picture metadata anywhere in the program.
+ *
  * Created by Jake Rowland on 3/17/2017.
  */
-
 public class ImageBufferHandler extends AsyncTask<URL, Double, JSONArray> {
 
+    //My ImageDownloader. Use to speed up image retrival
     private ImageDownloader id;
+    //Array of image metadata
     private JSONArray imageData;
-    private int currentIndex = 0;
 
 
+    /** convertStreamToString - I retrive the JSONObject from the URL as a stream. This method
+     *      converts that stream to String to allow JSONParser to create JSONObjects.
+     *
+     * @param is: InputStream - Content retrieved from the API call
+     * @return String - String representation of content retrieved from API call
+     */
     @NonNull
     private String convertStreamToString (InputStream is) {
+        //Create BufferedReader to read from the InputStream
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        //Builds string one line at a time
         StringBuilder sb = new StringBuilder();
 
+        //Temporary variable for parsing
         String line = null;
         try {
+            //Parse InputStream until EOF
             while((line = reader.readLine()) != null)
+                //Concurently build string
                 sb.append(line + "\n");
+
         }catch(IOException e) {
+            //Handle IOException
             Log.e(this.getClass().toString(), "ImageBufferHandler.convertStreamToString(InputStream is): " + e.toString());
         }finally {
             try {
+                //Close the InputStream to conserve memory
                 is.close();
             }catch (IOException e) {
+                //Handle IOException
                 Log.e(this.getClass().toString(), "ImageBufferHandler.convertStreamToString(InputStream is): " + e.toString());
             }
         }
+        //Return String representation of API result
         return sb.toString();
     }
 
+    /** doInBackground - Main portion of ImageBufferHandler. This method opens a connection to the
+     *      Flickr API and converts the InputStream to String and then to a JSONObject.
+     *
+     *  From the JSONObject, I extract the photo JSONArray and store that globally for other use.
+     *
+     * @param urls: URL - This contains the link to the API
+     * @return JSONArray - Photo metadata used to download images
+     */
     @Override
     protected JSONArray doInBackground(URL... urls) {
+        //Creates teh HTTPS connection and the JSONArray that is the goal of this method
         HttpsURLConnection connection = null;
         JSONArray photo = null;
-        Log.d(this.getClass().toString(), "URL: " + urls[0]);
         try {
+            //Open the connection to the Flickr API
             connection = (HttpsURLConnection)(urls[0].openConnection());
             connection.setRequestMethod("GET");
             connection.connect();
 
+            //Check status of connection
             int status = connection.getResponseCode();
 
             String JSONRelpy;
+            //If status is success
             if(status == 200 || status == 201){
+                //Get response back from URL
                 InputStream response = connection.getInputStream();
+                //Convert to string
                 JSONRelpy = convertStreamToString(response);
 
+                //Create JSONObject
                 JSONObject json = null;
-                JSONObject photos = null;
-
                 try {
+                    //Convert String to JSONObject
                     json = new JSONObject(JSONRelpy);
-                    photos = json.getJSONObject("photos");
-                    photo = photos.getJSONArray("photo");
+                    //Extract JSONArray from
+                    photo = json.getJSONObject("photos").getJSONArray("photo");
+                    //Set global JSONArray
                     imageData = photo;
                 }catch (JSONException e) {
+                    //Catch any JSONExceptions
                     Log.e(this.getClass().toString(), "ImageBufferHandler.doInBackground(URL... urls): " + e.toString());
                 }finally {
+                    //Close response when finsihed
                     response.close();
                 }
-                Log.d(this.getClass().toString(), "Response: " + photo.toString());
             }
         }catch(IOException e) {
             Log.e(this.getClass().toString(), "ImageBufferHandler.doInBackground(URL... urls): " + e.toString());
         }
+        //Return JSONArray
         return photo;
     }
 
@@ -103,23 +140,32 @@ public class ImageBufferHandler extends AsyncTask<URL, Double, JSONArray> {
 
     }
 
+    /** nextImage - Uses ImageDownloader to get the next image. Each call uses a new ImageDownloader
+     *      to speed up concurrent image requests. Each ImageDownloader is also an AsnycTask in
+     *      itself
+     *
+     * @param index: int - The index of the image in th JSONArray to retrieve
+     * @return Bitmap - Image retrieved.
+     */
     public Bitmap nextImage(int index) {
-        if(imageData == null)
-            Log.d(this.getClass().toString(), "ImageData void");
-
         JSONObject imageMeta = null;
         try {
+            //Get ImageData from JSONArray
             imageMeta = (JSONObject) imageData.get(index);
 
+            //Instantiate ImageDownloader
             id = new ImageDownloader();
+            //Retrieve image from url
+            // 'http://farm"FARM#".static.flickr.com/"SERVER"/"PICTURE_ID"_"SECRET"_m.jpg
             URL url = new URL("http://farm" + imageMeta.get("farm") + ".static.flickr.com/" +
                     imageMeta.get("server") + "/" + imageMeta.get("id") + "_" +
                     imageMeta.get("secret") + "_m.jpg");
 
-            Log.d(this.getClass().toString(), "URL: " + url);
-
+            //Launch the AsyncTask
             id.execute(url);
+            //Retrieve image from ImageDownloader
             Bitmap image = id.get();
+            //Return image
             return image;
         }catch (JSONException e) {
             Log.e(this.getClass().toString(), "ImageBufferHandler.nextImage(): " + e);
@@ -130,7 +176,6 @@ public class ImageBufferHandler extends AsyncTask<URL, Double, JSONArray> {
         }catch (ExecutionException e) {
             Log.e(this.getClass().toString(), "ImageBufferHandler.nextImage(): " + e);
         }
-
         return null;
     }
 }
