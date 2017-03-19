@@ -27,8 +27,8 @@ import javax.net.ssl.HttpsURLConnection;
  *  With the underlying AysncTask to allow loading of images while the user is interacting with
  *      this application. I achieve this moving buffer by requesting images from the ImageDownloader
  *      on an as needed basis. My solution revolves around stroing the JSONArray contaning the
- *      picture details globaly in this class. After the AsyncTask has finsihed. I can access
- *      picture metadata anywhere in the program.
+ *      picture details globaly in_left this class. After the AsyncTask has finsihed. I can access
+ *      picture metadata anywhere in_left the program.
  *
  * Created by Jake Rowland on 3/17/2017.
  */
@@ -141,10 +141,10 @@ public class ImageBufferHandler extends AsyncTask<URL, Double, JSONArray> {
     }
 
     /** nextImage - Uses ImageDownloader to get the next image. Each call uses a new ImageDownloader
-     *      to speed up concurrent image requests. Each ImageDownloader is also an AsnycTask in
+     *      to speed up concurrent image requests. Each ImageDownloader is also an AsnycTask in_left
      *      itself
      *
-     * @param index: int - The index of the image in th JSONArray to retrieve
+     * @param index: int - The index of the image in_left th JSONArray to retrieve
      * @return Bitmap - Image retrieved.
      */
     public Bitmap nextImage(int index) {

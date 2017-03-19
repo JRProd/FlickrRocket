@@ -1,11 +1,8 @@
 package com.example.jakerowland.flickrrocket;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MotionEvent;
@@ -14,19 +11,37 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.Button;
+import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageSwitcher;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-
-import org.w3c.dom.Text;
+import android.widget.ViewSwitcher;
 
 
 public class ImageViewer extends AppCompatActivity {
 
+    //Views related to Tag selection
+    private TextView enterTag;
+    private EditText tag;
+    private ImageButton submitTag;
+
+    //Views related to progress bar
+    private ProgressBar progressBar;
+    private TextView loading;
+
+    //Views related to navigation
+    private ImageButton buttonLeft;
+    private ImageButton buttonRight;
+
+    //ImageSwitcher to support animations
     private ImageSwitcher imageView;
+    private Animation in_left;
+    private Animation out_left;
+    private Animation in_right;
+    private Animation out_right;
 
     //PhotoBuffer for continueous browsing.
     private PhotoBuffer photos;
@@ -35,7 +50,104 @@ public class ImageViewer extends AppCompatActivity {
     private float x1,x2;
     private static final int MIN_DISTANCE = 150;
 
-    /** updateImage - Updates image used in the image viewer to the current image in the buffer
+    private void init() {
+        //Initilize the ImageSwitcher
+        imageView  = (ImageSwitcher) findViewById(R.id.image_switcher);
+        //Create ImageView inside ImageSwitcher
+        imageView.setFactory(new ViewSwitcher.ViewFactory() {
+
+            /** makeView - Make and set up view for ImageSwitcher
+             *
+             * @return View: nwe view to use in ImageSwitcher
+             */
+            @Override
+            public View makeView() {
+                //Create ImageView
+                ImageView newView = new ImageView(getApplicationContext());
+                //Set Layout
+                newView.setLayoutParams(new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+                //Reutrn newVies
+                return newView;
+            }
+        });
+
+        //Initilize the animations
+        in_left = AnimationUtils.loadAnimation(this, R.anim.in_left);
+        out_left = AnimationUtils.loadAnimation(this, R.anim.out_left);
+        in_right = AnimationUtils.loadAnimation(this, R.anim.in_right);
+        out_right = AnimationUtils.loadAnimation(this, R.anim.out_right);
+
+        //Initilize the Tag selection
+        //Retrieve the Views for the tag selection
+        enterTag = (TextView) findViewById(R.id.text_tag);
+        tag = (EditText) findViewById(R.id.edit_text_tag);
+        submitTag = (ImageButton) findViewById(R.id.tag_submit);
+        //Create onClickListener
+        submitTag.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    //Get text in tag EditText
+                    String tagString = tag.getText().toString();
+                    //If text is empty
+                    if(tagString.equals("")) {
+                        //Deafult to rocket
+                        photos.setApiTag("rocket");
+                    } else {
+                        //Or set tag to text in tag EditText
+                        photos.setApiTag(tagString);
+                    }
+                    //Execute photos
+                    photos.execute();
+                    //Buffer Images
+                    bufferImages();
+                    //Remove UI elemets from screen
+                }finally {
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            //Remove TextView, EditText, and ImageBuffont
+                            enterTag.setVisibility(View.GONE);
+                            tag.setVisibility(View.GONE);
+                            submitTag.setVisibility(View.GONE);
+                        }
+                    });
+                }
+            }
+        });
+
+        //Initilize the left and right buttons
+        //Define onClick functionality of left arrow button
+        buttonLeft = (ImageButton) findViewById(R.id.imageButtonLeft);
+        buttonLeft.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Get last image
+                photos.lastImage();
+                //Sets animation to correct direction
+                imageView.setInAnimation(out_left);
+                imageView.setInAnimation(in_left);
+                //Update
+                updateImage();
+            }
+        });
+        //Define onClick functionality of left arrow button
+        buttonRight = (ImageButton) findViewById(R.id.imageButtonRight);
+        buttonRight.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Get next image
+                photos.nextImage();
+                //Sets animation to correct direction
+                imageView.setInAnimation(in_right);
+                imageView.setInAnimation(out_right);
+                //Update
+                updateImage();
+            }
+        });
+    }
+
+    /** updateImage - Updates image used in_left the image viewer to the current image in_left the buffer
      *
      */
     private void updateImage() {
@@ -43,8 +155,9 @@ public class ImageViewer extends AppCompatActivity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                //imageView.setImageDrawable(null);
                 //Get current bitmap from buffer
-                BitmapDrawable bmp = new BitmapDrawable(getResources(), photos.getCurrentImage());
+                BitmapDrawable bmp = new BitmapDrawable(imageView.getResources(), photos.getCurrentImage());
                 //Set image to bitmap
                 imageView.setImageDrawable(bmp);
             }
@@ -60,10 +173,20 @@ public class ImageViewer extends AppCompatActivity {
         //Number of images to buffer
         final int buffer = 25;
         //ProgressBar setup
-        final ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar);
-        final TextView loading = (TextView) findViewById(R.id.loadingTextView);
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        loading = (TextView) findViewById(R.id.loadingTextView);
         //Resize progress to buffer size
         progressBar.setMax(buffer);
+
+        //Set loading and progressBar to VISABLE
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                //Set visability for progress bar UI effects
+                loading.setVisibility(View.VISIBLE);
+                progressBar.setVisibility(View.VISIBLE);
+            }
+        });
 
         new Thread(new Runnable() {
             @Override
@@ -81,12 +204,16 @@ public class ImageViewer extends AppCompatActivity {
                     //Update the image
                     updateImage();
                     //Run on UI thread to remove the progress bar at then end of buffering
+                    //Adds navigation buttons
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             //Remove the progress bar
                             progressBar.setVisibility(View.GONE);
                             loading.setVisibility(View.GONE);
+                            //Add the navigation buttons
+                            buttonLeft.setVisibility(View.VISIBLE);
+                            buttonRight.setVisibility(View.VISIBLE);
                         }
                     });
                 }
@@ -127,58 +254,16 @@ public class ImageViewer extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
-
-        //Retrieve the image view from the
-        imageView  = (ImageSwitcher) findViewById(R.id.imageView);
-        Animation in = AnimationUtils.loadAnimation(this, R.anim.in);
-        Animation out = AnimationUtils.loadAnimation(this, R.anim.out);
-        imageView.setInAnimation(in);
-        imageView.setOutAnimation(out);
-
         //Create new PhotoBuffer and populate buffer with 30 images
         photos = new PhotoBuffer();
-        //Set tag to user entry
-        photos.setApiTag("swag");
-        //Launch process of retrieving API from URL
-        photos.execute();
+        //Set tag to user entryroc
 
-        bufferImages();
-
-        //Define onClick functionality of left arrow button
-        final ImageButton buttonLeft = (ImageButton) findViewById(R.id.imageButtonLeft);
-        buttonLeft.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //Get last image
-                photos.lastImage();
-                //Update
-                updateImage();
-            }
-        });
-        //Define onClick functionality of left arrow button
-        final ImageButton buttonRight = (ImageButton) findViewById(R.id.imageButtonRight);
-        buttonRight.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //Get next image
-                photos.nextImage();
-                //Update
-                updateImage();
-            }
-        });
+        init();
     }
 
     /** onTouchEvent - Controller for the swipe gestures
      *
-     * @param event: MotionEvent - Android build-in method for gesture control
+     * @param event: MotionEvent - Android build-in_left method for gesture control
      * @return boolean
      */
     @Override
@@ -198,12 +283,22 @@ public class ImageViewer extends AppCompatActivity {
                 float deltaX = x2 - x1;
                 //Swipe left to right
                 if (deltaX > MIN_DISTANCE) {
+                    //Gets the last image
                     photos.lastImage();
+                    //Set animation to correct direction
+                    imageView.setInAnimation(out_left);
+                    imageView.setInAnimation(in_left);
+                    //Updates image
                     updateImage();
                 }
                 //Swipe right to left
                 else if(deltaX < -1 * MIN_DISTANCE) {
+                    //Gets the next image
                     photos.nextImage();
+                    //Sets animation to correct direction
+                    imageView.setInAnimation(in_right);
+                    imageView.setInAnimation(out_right);
+                    //Updates image
                     updateImage();
                 }
                 break;
@@ -223,7 +318,7 @@ public class ImageViewer extends AppCompatActivity {
         return true;
     }
 
-    /** onOptionsItemSelected - Handles clicks to options in the menu
+    /** onOptionsItemSelected - Handles clicks to options in_left the menu
      *
      * @param item: MenuItem - Item clicked
      * @return boolean - Success
@@ -232,7 +327,7 @@ public class ImageViewer extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
+        // as you specify a parent activity in_left AndroidManifest.xml.
         int id = item.getItemId();
 
         //Handle Overflow menu

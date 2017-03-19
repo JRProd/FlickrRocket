@@ -58,7 +58,7 @@ public class PhotoBuffer {
      */
     public void setApiTag(String tag) {
         try {
-            //Creates URL with custom tag in it
+            //Creates URL with custom tag in_left it
             api = new URL("https://api.flickr.com/services/rest/?format=json&sort=random&method=" +
                     "flickr.photos.search&tags=" + tag + "&tag_mode=all&api_key=" +
                     "0e2b6aaf8a6901c264acb91f151a3350&nojsoncallback=1");
@@ -67,7 +67,7 @@ public class PhotoBuffer {
         }
     }
 
-    /** execute - execute the AsyncTask in ImageBufferHandler
+    /** execute - execute the AsyncTask in_left ImageBufferHandler
      *
      */
     public void execute() {
@@ -88,12 +88,13 @@ public class PhotoBuffer {
         try {
             //Wait until the loader as recieved the API response.
             loader.get(1000, TimeUnit.MILLISECONDS);
+            Log.d(this.getClass().toString(), "ImageBufferHandler.populateBuffer: loader loaded" );
         }catch (InterruptedException e) {
-            Log.e(this.getClass().toString(), "ImageBufferHandler.nextImage(): " + e);
+            Log.e(this.getClass().toString(), "ImageBufferHandler.populateBuffer(): " + e);
         }catch (ExecutionException e) {
-            Log.e(this.getClass().toString(), "ImageBufferHandler.nextImage(): " + e);
+            Log.e(this.getClass().toString(), "ImageBufferHandler.populateBuffer(): " + e);
         }catch (TimeoutException e) {
-            Log.e(this.getClass().toString(), "ImageBufferHandler.nextImage(): " + e);
+            Log.e(this.getClass().toString(), "ImageBufferHandler.populateBuffer(): " + e);
         }
 
         //Add images to the buffer from the loader.
