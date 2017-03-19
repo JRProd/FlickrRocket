@@ -6,10 +6,10 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
-/**
- * Created by The One True God on 3/19/2017.
+/** About - Basic Activity to share more information about the application
+ *
+ * Created by Jake Rowland on 3/19/2017.
  */
-
 public class About extends Activity {
 
     @Override
@@ -17,10 +17,12 @@ public class About extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.about);
 
+        //Simple button to return to ImageViewer
         final Button goBack = (Button) findViewById(R.id.about_return);
         goBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //Create intent to return to ImageViewer
                 Intent goBack = new Intent(About.this, ImageViewer.class);
                 startActivity(goBack);
             }

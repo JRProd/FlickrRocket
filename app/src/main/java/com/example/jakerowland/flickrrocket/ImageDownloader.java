@@ -15,7 +15,7 @@ import java.net.URL;
  *
  * Created by Jake Rowland on 3/17/2017.
  */
-public class ImageDownloader extends AsyncTask<URL, Void, Bitmap> {
+class ImageDownloader extends AsyncTask<URL, Void, Bitmap> {
 
     /** doInBackground - Connect to the Image URL and download the image as a bitmap.
      *

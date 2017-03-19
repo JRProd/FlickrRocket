@@ -21,10 +21,7 @@ import java.util.concurrent.TimeoutException;
  *
  * Created by Jake Rowland on 3/17/2017.
  */
-public class PhotoBuffer {
-
-    //Buffer Update and number added when buffering
-    private int bufferUpdate = 2, bufferOverflow = 3;
+class PhotoBuffer {
 
     //Define URL
     private URL api = null;
@@ -43,7 +40,7 @@ public class PhotoBuffer {
      */
     PhotoBuffer() {
         //Init global variables
-        buffer = new LinkedList<Bitmap>();
+        buffer = new LinkedList<>();
         loadedImage = 0;
         currentImage = 0;
         hasMoreImages = true;
@@ -56,7 +53,7 @@ public class PhotoBuffer {
      *
      * @param tag: string - Tag to match photos to
      */
-    public void setApiTag(String tag) {
+    void setApiTag(String tag) {
         try {
             //Creates URL with custom tag in_left it
             api = new URL("https://api.flickr.com/services/rest/?format=json&sort=random&method=" +
@@ -70,7 +67,7 @@ public class PhotoBuffer {
     /** execute - execute the AsyncTask in_left ImageBufferHandler
      *
      */
-    public void execute() {
+    void execute() {
         //Checks if api set
         if(api == null)
             setApiTag("rocket");
@@ -83,7 +80,7 @@ public class PhotoBuffer {
      *
      * @param startingBuffer: int - Variable to quickly change how many images are initially loaded
      */
-    public void populateBuffer(int startingBuffer)
+    void populateBuffer(int startingBuffer)
     {
         try {
             //Wait until the loader as recieved the API response.
@@ -110,20 +107,23 @@ public class PhotoBuffer {
      *
      * @return Bitmap - Current Image
      */
-    public Bitmap getCurrentImage() {
+    Bitmap getCurrentImage() {
         return buffer.get(currentImage);
     }
 
     /** nextImage - Retrieves the next image for display
      *
-     * @return
+     * @return Bitmap - Next image recieved
      */
-    public Bitmap nextImage() {
+    Bitmap nextImage() {
         //Boundary check to stop users from scrolling past buffered images
         if(currentImage < buffer.size() -1)
             currentImage ++;
         else
             currentImage = 0;
+
+        //Buffer Update and number added when buffering
+        int bufferUpdate = 2, bufferOverflow = 3;
 
         //Check if nearing the end of the buffer or if there are more images to buffer
         if(buffer.size() - currentImage < bufferUpdate && hasMoreImages)
@@ -148,7 +148,7 @@ public class PhotoBuffer {
      *
      * @return Bitmap - Last image sceen
      */
-    public Bitmap lastImage() {
+    Bitmap lastImage() {
         //Boundary check
         if(currentImage > 0)
             currentImage --;

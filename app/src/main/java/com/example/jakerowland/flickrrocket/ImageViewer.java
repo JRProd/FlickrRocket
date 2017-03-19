@@ -47,7 +47,7 @@ public class ImageViewer extends AppCompatActivity {
     private PhotoBuffer photos;
 
     //Variables for swipe gesture
-    private float x1,x2;
+    private float x1;
     private static final int MIN_DISTANCE = 150;
 
     private void init() {
@@ -278,7 +278,7 @@ public class ImageViewer extends AppCompatActivity {
             //On Finger up
             case MotionEvent.ACTION_UP:
                 //Get second x value
-                x2 = event.getX();
+                float x2 = event.getX();
                 //Find the deltaX
                 float deltaX = x2 - x1;
                 //Swipe left to right

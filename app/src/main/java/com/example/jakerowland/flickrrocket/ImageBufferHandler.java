@@ -32,10 +32,7 @@ import javax.net.ssl.HttpsURLConnection;
  *
  * Created by Jake Rowland on 3/17/2017.
  */
-public class ImageBufferHandler extends AsyncTask<URL, Double, JSONArray> {
-
-    //My ImageDownloader. Use to speed up image retrival
-    private ImageDownloader id;
+class ImageBufferHandler extends AsyncTask<URL, Double, JSONArray> {
     //Array of image metadata
     private JSONArray imageData;
 
@@ -54,12 +51,12 @@ public class ImageBufferHandler extends AsyncTask<URL, Double, JSONArray> {
         StringBuilder sb = new StringBuilder();
 
         //Temporary variable for parsing
-        String line = null;
+        String line;
         try {
             //Parse InputStream until EOF
             while((line = reader.readLine()) != null)
                 //Concurently build string
-                sb.append(line + "\n");
+                sb.append(line).append("\n");
 
         }catch(IOException e) {
             //Handle IOException
@@ -88,7 +85,7 @@ public class ImageBufferHandler extends AsyncTask<URL, Double, JSONArray> {
     @Override
     protected JSONArray doInBackground(URL... urls) {
         //Creates teh HTTPS connection and the JSONArray that is the goal of this method
-        HttpsURLConnection connection = null;
+        HttpsURLConnection connection;
         JSONArray photo = null;
         try {
             //Open the connection to the Flickr API
@@ -108,7 +105,7 @@ public class ImageBufferHandler extends AsyncTask<URL, Double, JSONArray> {
                 JSONRelpy = convertStreamToString(response);
 
                 //Create JSONObject
-                JSONObject json = null;
+                JSONObject json;
                 try {
                     //Convert String to JSONObject
                     json = new JSONObject(JSONRelpy);
@@ -147,14 +144,14 @@ public class ImageBufferHandler extends AsyncTask<URL, Double, JSONArray> {
      * @param index: int - The index of the image in_left th JSONArray to retrieve
      * @return Bitmap - Image retrieved.
      */
-    public Bitmap nextImage(int index) {
-        JSONObject imageMeta = null;
+    Bitmap nextImage(int index) {
+        JSONObject imageMeta;
         try {
             //Get ImageData from JSONArray
             imageMeta = (JSONObject) imageData.get(index);
 
             //Instantiate ImageDownloader
-            id = new ImageDownloader();
+            ImageDownloader id = new ImageDownloader();
             //Retrieve image from url
             // 'http://farm"FARM#".static.flickr.com/"SERVER"/"PICTURE_ID"_"SECRET"_m.jpg
             URL url = new URL("http://farm" + imageMeta.get("farm") + ".static.flickr.com/" +
@@ -163,10 +160,8 @@ public class ImageBufferHandler extends AsyncTask<URL, Double, JSONArray> {
 
             //Launch the AsyncTask
             id.execute(url);
-            //Retrieve image from ImageDownloader
-            Bitmap image = id.get();
             //Return image
-            return image;
+            return id.get();
         }catch (JSONException e) {
             Log.e(this.getClass().toString(), "ImageBufferHandler.nextImage(): " + e);
         }catch (MalformedURLException e) {
