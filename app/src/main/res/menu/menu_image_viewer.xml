@@ -3,8 +3,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.example.jakerowland.flickrrocket.ImageViewer">
     <item
-        android:id="@+id/action_settings"
-        android:orderInCategory="100"
-        android:title="@string/action_settings"
-        app:showAsAction="never" />
+        android:id="@+id/action_about"
+        android:orderInCategory="0"
+        android:title="@string/action_about" />
+
+    <item
+        android:id="@+id/action_about_dev"
+        android:orderInCategory="1"
+        android:title="@string/action_about_dev" />
 </menu>

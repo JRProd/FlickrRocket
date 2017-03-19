@@ -1,6 +1,8 @@
 package com.example.jakerowland.flickrrocket;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -10,10 +12,21 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.Button;
+import android.widget.ImageButton;
+import android.widget.ImageSwitcher;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+
+import org.w3c.dom.Text;
 
 
 public class ImageViewer extends AppCompatActivity {
+
+    private ImageSwitcher imageView;
 
     //PhotoBuffer for continueous browsing.
     private PhotoBuffer photos;
@@ -26,16 +39,89 @@ public class ImageViewer extends AppCompatActivity {
      *
      */
     private void updateImage() {
-        //Get the imageView
-        ImageView imageView = (ImageView) findViewById(R.id.imageView);
-        //Get current bitmap from buffer
-        Bitmap bmp = photos.getCurrentImage();
-        //Set image to bitmap
-        imageView.setImageBitmap(bmp);
+        //Run on UI thread to enable mjltithreaded progress bar
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                //Get current bitmap from buffer
+                BitmapDrawable bmp = new BitmapDrawable(getResources(), photos.getCurrentImage());
+                //Set image to bitmap
+                imageView.setImageDrawable(bmp);
+            }
+        });
     }
 
+    /** bufferImages - Initial image buffering and progress bar operations. This method defines
+     *      how many images are initially buffered and handles updating the progress bar as the
+     *      images buffer
+     *
+     */
+    private void bufferImages() {
+        //Number of images to buffer
+        final int buffer = 25;
+        //ProgressBar setup
+        final ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        final TextView loading = (TextView) findViewById(R.id.loadingTextView);
+        //Resize progress to buffer size
+        progressBar.setMax(buffer);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    //Populate the buffer with "buffer"# of images
+                    for (int i = 0; i < buffer; i++) {
+                        //Increment the progresbar
+                        progressBar.incrementProgressBy(1);
+                        //Add image
+                        photos.populateBuffer(1);
+                    }
+                    //Run when thread ends
+                } finally {
+                    //Update the image
+                    updateImage();
+                    //Run on UI thread to remove the progress bar at then end of buffering
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            //Remove the progress bar
+                            progressBar.setVisibility(View.GONE);
+                            loading.setVisibility(View.GONE);
+                        }
+                    });
+                }
+            }
+            //Start the thread
+        }).start();
+    }
+
+    /** about - Opens the about activity
+     *
+     */
+    private void about() {
+        //Creates Intent to open About activity
+        Intent about = new Intent(ImageViewer.this, About.class);
+        //Starts activity
+        startActivity(about);
+    }
+
+    /** aboutDev - Opens the aboutDev activity
+     *
+     */
+    private void aboutDev() {
+        //Creates Intent to open About activity
+        Intent aboutDev = new Intent(ImageViewer.this, AboutDev.class);
+        //Starts activity
+        startActivity(aboutDev);
+    }
+
+    /** onCreate - Initilizes data memebers and processing for Activity on creation
+     *
+     * @param savedInstanceState: Bundle - Saved instance
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //Auto generated code
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_image_viewer);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -50,12 +136,44 @@ public class ImageViewer extends AppCompatActivity {
             }
         });
 
+        //Retrieve the image view from the
+        imageView  = (ImageSwitcher) findViewById(R.id.imageView);
+        Animation in = AnimationUtils.loadAnimation(this, R.anim.in);
+        Animation out = AnimationUtils.loadAnimation(this, R.anim.out);
+        imageView.setInAnimation(in);
+        imageView.setOutAnimation(out);
+
         //Create new PhotoBuffer and populate buffer with 30 images
         photos = new PhotoBuffer();
-        photos.populateBuffer(30);
+        //Set tag to user entry
+        photos.setApiTag("swag");
+        //Launch process of retrieving API from URL
+        photos.execute();
 
-        //Update image to new image in buffer
-        updateImage();
+        bufferImages();
+
+        //Define onClick functionality of left arrow button
+        final ImageButton buttonLeft = (ImageButton) findViewById(R.id.imageButtonLeft);
+        buttonLeft.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Get last image
+                photos.lastImage();
+                //Update
+                updateImage();
+            }
+        });
+        //Define onClick functionality of left arrow button
+        final ImageButton buttonRight = (ImageButton) findViewById(R.id.imageButtonRight);
+        buttonRight.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Get next image
+                photos.nextImage();
+                //Update
+                updateImage();
+            }
+        });
     }
 
     /** onTouchEvent - Controller for the swipe gestures
@@ -93,6 +211,11 @@ public class ImageViewer extends AppCompatActivity {
         return super.onTouchEvent(event);
     }
 
+    /** onCreateOptionsMenu - Opperations to run when options menu is created
+     *
+     * @param menu: Menu - Menu to create
+     * @return boolean - Success
+     */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -100,6 +223,11 @@ public class ImageViewer extends AppCompatActivity {
         return true;
     }
 
+    /** onOptionsItemSelected - Handles clicks to options in the menu
+     *
+     * @param item: MenuItem - Item clicked
+     * @return boolean - Success
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -107,11 +235,17 @@ public class ImageViewer extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        //Handle Overflow menu
+        switch (id){
+            //Case for About button
+            case R.id.action_about:
+                about();
+                break;
+            //Case for About Dev button
+            case R.id.action_about_dev:
+                aboutDev();
+                break;
         }
-
         return super.onOptionsItemSelected(item);
     }
 }

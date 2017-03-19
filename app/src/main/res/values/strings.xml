@@ -1,4 +1,30 @@
 <resources>
     <string name="app_name">FlickrRocket</string>
-    <string name="action_settings">Settings</string>
+    <string name="action_about_dev">About The Dev</string>
+    <string name="action_about">About the App</string>
+    <string name="about_app">\t\t\t\tHello, welcome to my Flickr photo viewing app. This application
+        was created as part of the hiring process for Bottle Rocket in Dallas, TX. There are two ways
+        to browse through the images. First,you can use your finger to swipe left or right to move
+        the images. Secondly, there are two buttons on the bottom of the screen that will also
+        navigate throught these photos.</string>
+    <string name="about_contact_info"> Southern Methodist University\n
+        Jwrowland@smu.edu\n
+        817-899-8965 (cell)\n
+        3140 Dyer St SMU #2378\n
+        Dallas, Texas 75275\n</string>
+    <string name="about_dev">\t\t\t\tI am a computer science major at Southern Methodist University
+        and I have wanted to be a programmer for as long as I can remember. I love the challenge
+        provided to me from a great problem to solve. Take this application for example. Before I had
+        little to none experience working on android devices. Im glad to say, it has been a while
+        since I have this much fun developing an applicaiton, especially getting to learn the quirks
+        surrounding Android OS. Luckly I had a vast background in java programming which helped me
+        greatly in this project. Anyways, back to me. Im currently a sophtmore planning on graduating
+        during the spring of 2019, but already egear to join the work force over the summer.
+        Especially if its new and challenging. I appreciate the tiem you have taken to both read
+        about me and partake in my application. Hopefully as I learn more, I can improve the visual
+        quality of it, but I can tell you the inner workings are my favorite part. Feel free to
+        contact me at any time.
+        \n
+        \n
+        Thank you all.</string>
 </resources>

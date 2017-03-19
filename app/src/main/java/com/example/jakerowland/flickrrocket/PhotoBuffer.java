@@ -2,6 +2,7 @@ package com.example.jakerowland.flickrrocket;
 
 import android.graphics.Bitmap;
 import android.util.Log;
+import android.widget.ProgressBar;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -23,7 +24,10 @@ import java.util.concurrent.TimeoutException;
 public class PhotoBuffer {
 
     //Buffer Update and number added when buffering
-    private int bufferUpdate = 4, bufferOverflow = 10;
+    private int bufferUpdate = 2, bufferOverflow = 3;
+
+    //Define URL
+    private URL api = null;
 
     //Buffer Handler and LinkedList data structure
     private ImageBufferHandler loader;
@@ -32,6 +36,7 @@ public class PhotoBuffer {
     //Image stats
     private int loadedImage;
     private int currentImage;
+    private boolean hasMoreImages;
 
     /** PhotoBuffer - Initilizes and implements the PhotoBuffer
      *
@@ -41,25 +46,47 @@ public class PhotoBuffer {
         buffer = new LinkedList<Bitmap>();
         loadedImage = 0;
         currentImage = 0;
+        hasMoreImages = true;
 
-        URL api = null;
-        try {
-            //Create the URL for the API
-            api = new URL("https://api.flickr.com/services/rest/?format=json&sort=random&method=" +
-                    "flickr.photos.search&tags=rocket&tag_mode=all&api_key=" +
-                    "0e2b6aaf8a6901c264acb91f151a3350&nojsoncallback=1");
-        }catch (MalformedURLException e) {
-            Log.e(this.getClass().toString(), "PhotoBuffer.PhotoBuffer(): " + e.toString());
-        }
+        //Create the ImageBUfferHandler and execute the AsyncTask
         loader = new ImageBufferHandler();
-        loader.execute(api);
-
-
     }
 
-    public boolean populateBuffer(int startingBuffer)
+    /** setApiTag - Sets api tag to allow users to change the tag for the image search
+     *
+     * @param tag: string - Tag to match photos to
+     */
+    public void setApiTag(String tag) {
+        try {
+            //Creates URL with custom tag in it
+            api = new URL("https://api.flickr.com/services/rest/?format=json&sort=random&method=" +
+                    "flickr.photos.search&tags=" + tag + "&tag_mode=all&api_key=" +
+                    "0e2b6aaf8a6901c264acb91f151a3350&nojsoncallback=1");
+        }catch (MalformedURLException e){
+            Log.e(this.getClass().toString(), "PhotoBuffer.PhotoBuffer(): " + e.toString());
+        }
+    }
+
+    /** execute - execute the AsyncTask in ImageBufferHandler
+     *
+     */
+    public void execute() {
+        //Checks if api set
+        if(api == null)
+            setApiTag("rocket");
+        //Launches AsyncTask
+        loader.execute(api);
+    }
+
+    /** populateBuffer - Populates the initial buffer with images. This allows for quick scrolling
+     *      from the apps inception.
+     *
+     * @param startingBuffer: int - Variable to quickly change how many images are initially loaded
+     */
+    public void populateBuffer(int startingBuffer)
     {
         try {
+            //Wait until the loader as recieved the API response.
             loader.get(1000, TimeUnit.MILLISECONDS);
         }catch (InterruptedException e) {
             Log.e(this.getClass().toString(), "ImageBufferHandler.nextImage(): " + e);
@@ -69,42 +96,64 @@ public class PhotoBuffer {
             Log.e(this.getClass().toString(), "ImageBufferHandler.nextImage(): " + e);
         }
 
+        //Add images to the buffer from the loader.
         for(int i = 0; i < startingBuffer; i++) {
+            //Use loadedImage index to store number of images loaded. Used to calculate when user is
+            // nearing the end of the buffered images
             buffer.add(loader.nextImage(loadedImage));
             loadedImage++;
-            Log.v(this.getClass().toString(), "LoadedImage: " + loadedImage);
         }
-
-        return true;
     }
 
+    /** getCurrentImage - Returns the current image
+     *
+     * @return Bitmap - Current Image
+     */
     public Bitmap getCurrentImage() {
         return buffer.get(currentImage);
     }
 
+    /** nextImage - Retrieves the next image for display
+     *
+     * @return
+     */
     public Bitmap nextImage() {
+        //Boundary check to stop users from scrolling past buffered images
         if(currentImage < buffer.size() -1)
             currentImage ++;
         else
-            return null;
+            currentImage = 0;
 
-        if(buffer.size() - currentImage < bufferUpdate)
+        //Check if nearing the end of the buffer or if there are more images to buffer
+        if(buffer.size() - currentImage < bufferUpdate && hasMoreImages)
         {
+            //If neat the end. Load more images to facilitate continued scrolling
             for(int i = 0; i < bufferOverflow; i++) {
-                buffer.add(loader.nextImage(loadedImage));
-                loadedImage++;
-                Log.v(this.getClass().toString(), "LoadedImage: " + loadedImage);
-                Log.v(this.getClass().toString(), "Buffer.size: " + buffer.size() + " | CurrentImage: " + currentImage);
+                Bitmap img = loader.nextImage(loadedImage);
+                if(img != null) {
+                    buffer.add(img);
+                    loadedImage++;
+                } else {
+                    hasMoreImages = false;
+                    break;
+                }
             }
         }
+        //Return the new current image
         return buffer.get(currentImage);
     }
 
+    /** lastImage - Gets the last image viewed. Used for history and reverse scrolling.
+     *
+     * @return Bitmap - Last image sceen
+     */
     public Bitmap lastImage() {
+        //Boundary check
         if(currentImage > 0)
             currentImage --;
         else
-            return null;
+            currentImage = buffer.size() - 2;
+        //Gets the last image seen
         return buffer.get(currentImage);
     }
 }
